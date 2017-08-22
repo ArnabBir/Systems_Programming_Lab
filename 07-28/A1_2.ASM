@@ -1,0 +1,28 @@
+TITLE A1_2:ASSIGNMENT_1_QUES_2
+.MODEL SMALL
+.STACK 100H
+.CODE
+MAIN PROC
+        MOV AH,2
+			MOV DL,'?'
+			INT 21H
+        MOV AH,1
+			INT 21H
+			MOV BL,AL
+        MOV AH,2
+			MOV DL,0DH
+			INT 21H
+			MOV DL,0AH
+			INT 21H
+				MOV DL,224
+				CMP BL,70
+				JL P1
+				CMP BL,80
+				JLE P2
+				INC DL
+				P2:INC DL
+					P1:INT 21H
+		MOV AH,4CH
+        INT 21H
+MAIN ENDP
+END MAIN

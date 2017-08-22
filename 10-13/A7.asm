@@ -1,0 +1,219 @@
+TITLE A7:ASSIGNMENT_7
+.MODEL SMALL
+
+SAVE_REGS MACRO REGS
+	IRP D,<REGS>
+		PUSH D
+	ENDM
+ENDM
+
+;POPING REGISTERS
+RESTORE_REGS MACRO REGS
+	IRP D,<REGS>
+		POP D
+	ENDM
+ENDM
+
+;END OF THE PROGRAM
+DOS_RTN MACRO
+	MOV AH,4CH
+	INT 21H
+ENDM
+
+;MOVE TO NEXT LINE
+NEW_LINE MACRO
+	SAVE_REGS <AX,DX>
+	MOV AH,2
+	MOV DL,0DH
+	INT 21H
+	MOV DL,0AH
+	INT 21H
+	RESTORE_REGS <DX,AX>
+ENDM
+
+;GIVE SOME SPACE
+SPACE MACRO
+	PUSH AX
+	PUSH DX
+	MOV AH,2
+	MOV DL,' '
+	INT 21H
+	INT 21H
+	INT 21H
+	INT 21H
+	POP DX
+	POP AX
+ENDM
+
+.STACK 100H
+.DATA
+	X DW 10 DUP(?)
+	S DW 10 DUP(?)
+	  DW 10 DUP(?)
+	  DW 10 DUP(?)
+	  DW 10 DUP(?)
+	  DW 10 DUP(?)
+	  DW 10 DUP(?)
+	  DW 10 DUP(?)
+	  DW 10 DUP(?)
+	  DW 10 DUP(?)
+	  DW 10 DUP(?)
+	M DW ?
+	NUM DB 'Enter no. of elements$'
+	ELE DB 'Enter the elements$'
+	EM DB 'Enter m: $'
+	EN DB 'Enter n: $'
+	ANS DB 'Answer : $'
+	RESULT DB 'i    j    S$'
+	RESULT2 DB '------------$'
+	NTPOS DB 'Not Possible$'
+	TTL DW ?
+.CODE
+
+;MAIN PROCEDURE
+MAIN PROC
+	MOV AX,@DATA
+	MOV DS,AX
+	; no. of elements
+			MOV AH,9
+			LEA DX,NUM
+			INT 21H
+			NEW_LINE
+	CALL INDEC
+	NEW_LINE
+	MOV TTL,AX
+	
+	;entering elements
+			MOV AH,9
+			LEA DX,ELE
+			INT 21H
+			NEW_LINE
+	MOV CX,TTL
+	MOV SI,0
+	L1:
+		CALL INDEC
+		MOV X[SI],AX
+		ADD SI,2
+		LOOP L1
+	NEW_LINE
+			MOV AH,9
+			LEA DX,RESULT
+			INT 21H
+			NEW_LINE
+			MOV AH,9
+			LEA DX,RESULT2
+			INT 21H
+			NEW_LINE
+			
+	;calculate all the values 
+	MOV SI,0
+	MOV BX,0
+	MOV CX,1
+	L2:
+		CMP CX,TTL
+		JG END_L2
+		MOV DX,CX
+		ADD SI,DX
+		ADD SI,DX
+		SUB SI,2
+		L3:
+			CMP DX,TTL
+			JG END_L3
+			MOV AX,CX
+			CALL OUTDEC
+			SPACE
+			MOV AX,DX
+			CALL OUTDEC
+			SPACE
+			XOR AX,AX
+			PUSH CX
+			PUSH DX
+			CALL SUM
+			MOV S[BX][SI],AX
+			CALL OUTDEC
+			NEW_LINE
+			ADD SI,2
+			INC DX
+			JMP L3
+		END_L3:
+			ADD BX,20
+			XOR SI,SI
+			INC CX
+			JMP L2
+	END_L2:
+		NEW_LINE
+		
+	;entering m
+			MOV AH,9
+			LEA DX,EM
+			INT 21H
+			CALL INDEC
+			PUSH AX
+			MOV M,AX
+	NEW_LINE
+	
+	;entering n
+			MOV AH,9
+			LEA DX,EN
+			INT 21H
+			CALL INDEC
+			PUSH AX
+	NEW_LINE
+	CMP AX,M
+	JL NP
+	;finding result and displaying it
+			MOV AH,9
+			LEA DX,ANS
+			INT 21H
+	CALL SUM
+	CALL OUTDEC
+	JMP END_MAIN
+	NP:
+			MOV AH,9
+			LEA DX,NTPOS
+			INT 21H
+	END_MAIN:
+		NEW_LINE
+	DOS_RTN
+MAIN ENDP
+
+;procedure to find S(i,j) = S(i,k) + S(k,j), where k=(i+j)/2
+SUM PROC
+	SAVE_REGS <BP,CX,DX>
+	MOV BP,SP
+	MOV AX,[BP+10]
+	CMP AX,[BP+8]
+	JE T1
+	INC AX
+	CMP AX,[BP+8]
+	JNE T2
+	T1:
+		MOV DI,AX
+		ADD DI,DI
+		SUB DI,2
+		MOV AX,X[DI]
+		JMP R1
+	T2:
+		MOV AX,[BP+8]
+		ADD AX,[BP+10]
+		MOV DX,0
+		MOV CX,2
+		DIV CX
+		MOV CX,AX
+		PUSH [BP+10]
+		PUSH CX
+		CALL SUM
+		PUSH AX
+		PUSH CX
+		PUSH [BP+8]
+		CALL SUM
+		POP CX
+		ADD AX,CX
+	R1:
+		RESTORE_REGS <DX,CX,BP>
+		RET 4
+SUM ENDP
+
+INCLUDE d:\INDEC.ASM
+INCLUDE d:\OUTDEC.ASM
+END MAIN
